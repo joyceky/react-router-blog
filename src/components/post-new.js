@@ -1,43 +1,70 @@
-import React, { Component } from 'react';
-import { reduxForm } from 'redux-form';
-// import { bindActionCreators } from 'redux';
-// import { fetchPosts } from '../actions/index';
+import React, { Component, PropTypes } from 'react';
+import { Field, reduxForm } from 'redux-form';
+import { connect } from 'react-redux';
+import { Link, browserHistory } from 'react-router';
+
+import { createPost } from '../actions/index';
+
+const renderField = ({ input, label, type, element, meta: { touched, error, warning } }) => {
+  return (
+    <div className={`form-group ${touched && error ? 'has-danger' : ''}`}>
+      <label>
+        {label}
+        {element === 'input' ?
+        <input {...input} className="form-control" type={type}/> :
+        <textarea {...input} className="form-control" type={type}/>}
+
+        {touched && (error && <div className="alert alert-danger">{error}</div>)}
+      </label>
+    </div>
+  );
+}
 
 class PostsNew extends Component {
-  /* lifecycle method called whenever component is about
-   to be rendered to the dom for the first time */
-  // componentWillMount() {
-  //   this.props.fetchPosts();
-  // }
+  static contextTypes = {
+    router: PropTypes.object
+  };
+
+  onSubmit = (fields) => {
+    this.props.createPost(fields).then(() => {
+      // browserHistory.push('/');
+      this.context.router.push('/');
+    });
+  }
 
   render() {
+    const {handleSubmit} = this.props;
     return (
-      <form >
-        <h3>Create A New Post</h3>
-        <div className="form-group">
-          <label>Title</label>
-          <input type="text" className="form-control" />
-        </div>
-        <div className="form-group">
-          <label>Categories</label>
-          <input type="text" className="form-control" />
-        </div>
-        <div className="form-group">
-          <label>Content</label>
-          <input type="text-area" className="form-control" />
-        </div>
+      <div>
+        <form onSubmit={handleSubmit(this.onSubmit)}>
+          <h3>Create a New Post</h3>
 
-        <button type="submit" className="btn btn-primary">Submit</button>
-      </form>
-    )
+          <Field element="input" label="Title" name="title" type="text" component={renderField} />
+          <Field element="input" label="Categories" name="categories" type="text" component={renderField} />
+          <Field element="textarea" label="Content" name="content" component={renderField} />
+          <button type="submit" className="btn btn-primary">Create Post</button>
+          <Link to="/" className="btn btn-danger">Cancel</Link>
+        </form>
+      </div>
+    );
   }
 }
 
-// function mapDispatchToProps(dispatch) {
-//   return bindActionCreators({ fetchPosts }, dispatch);
-// }
+function validate(values) {
+  const errors = {};
+  if (!values.title) {
+    errors.title = 'Enter a username';
+  }
+  if (!values.categories) {
+    errors.categories = 'Enter categories';
+  }
+  if(!values.content) {
+    errors.content = 'Enter some content';
+  }
+  return errors;
+}
 
-export default reduxForm({
-  form: 'PostsNewForm',
-  fields: ['title', 'categories', 'content']
-})(PostsNew);
+export default connect(null, {createPost})(reduxForm({
+  form: 'PostsNew',
+  validate
+})(PostsNew));
